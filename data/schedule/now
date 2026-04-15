@@ -1,0 +1,21 @@
+{
+    "name": "now",
+    "durations": [
+        [
+            "0:0:0",
+            "23:59:59"
+        ]
+    ],
+    "categories": [
+        "celebrity",
+        "adult-01",
+        "adult-02",
+        "adult-04",
+        "adult-06",
+        "adult-09",
+        "adult-10",
+        "adult-12",
+        "adult-15"
+    ],
+    "websites": []
+}

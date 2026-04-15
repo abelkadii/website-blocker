@@ -1,18 +1,8 @@
 from utils import *
 from display import _ListBox, _Label, _Button, _Entry, TimePicker
-from tkinter import *
-from tkinter.messagebox import *
-from constant import *
-from core import Core
-from schedule import Schedule
-from category import Category
-from datetime import datetime
-import threading
-
-
 root = Tk()
 root.title('website blocker')
-root.iconbitmap('favicon.ico')
+
 def disable_event():
     Core._end()
     root.destroy()
@@ -20,13 +10,13 @@ def disable_event():
 root.protocol("WM_DELETE_WINDOW", disable_event)
 
 category_settings = LabelFrame(root, text='category settings', padx=10, pady=10)
-category_settings.grid(column=0, row=0, padx=10, pady=10)
+category_settings.grid(column=0, row=0, padx=10, pady=10, columnspan=5)
 
 schedule_settings = LabelFrame(root, text='schedule settings', padx=10, pady=10)
-schedule_settings.grid(column=1, row=0, padx=10, pady=10)
+schedule_settings.grid(column=5, row=0, padx=10, pady=10, columnspan=5)
 
 active = LabelFrame(root, text='active', padx=10, pady=10)
-active.grid(column=2, row=0, padx=10, pady=10)
+active.grid(column=0, row=1, padx=10, pady=10, columnspan=10)
 
 schedules = Schedule.get_all()
 categories = Category.get_all()
@@ -43,15 +33,13 @@ def on_website_click(self):
 website_frame_label  = _Label(category_settings, 'websites', 4, 0, [ 10, 0, 0, 0], 2)
 website_frame_label.create()
 
-# --------------------------------------------------------------------------------------------------------------
-website_frame = _ListBox(category_settings, [], SINGLE, 17, 30, 4, 1, [10, 10, 5, 10], 2, 2, on_website_click)
+website_frame = _ListBox(category_settings, [], SINGLE, 18, 45, 4, 1, [10, 10, 5, 10], 2, 2, on_website_click)
 website_frame.create()
 
 schedule_frame_label  = _Label(category_settings, 'schedules', 4, 4, [0, 0, 0, 0], 2)
 schedule_frame_label.create()
 
-# --------------------------------------------------------------------------------------------------------------
-schedule_frame = _ListBox(category_settings, [], SINGLE, 5, 30, 4, 5, [0, 10, 5, 0], 2, 3)
+schedule_frame = _ListBox(category_settings, [], SINGLE, 9, 45, 4, 5, [0, 10, 5, 0], 2, 3)
 schedule_frame.create()
 
 
@@ -81,14 +69,14 @@ def on_category_select(self):
     website_thread.start()
     schedule_thread.start()
 
-category_frame_label  = _Label(category_settings, 'categories', 0, 0, [ 10, 0, 0, 0], 3)
+category_frame_label  = _Label(category_settings, 'categories', 0, 0, [ 10, 0, 0, 0], 2)
 category_frame_label.create()
 
 def add_website_button_on_click(self):  
     def _():
         if category_frame.value:
             new_window = Toplevel()
-            new_window.title('adding')
+            new_window.title('adding a website')
             new_window_label = _Label(new_window, 'website name: ',0, 0, [10, 0, 0, 0], 1)
             new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2)
             
@@ -131,7 +119,7 @@ def add_website_button_on_click(self):
         
 
 
-add_website_button = _Button(category_settings, 'add', 4, 3, 1, 1, [10, 5, 10, 5], add_website_button_on_click)
+add_website_button = _Button(category_settings, 'add a website', 4, 3, 1, 1, [10, 5, 10, 5], add_website_button_on_click)
 add_website_button.create()
 
 def delete_website_button_on_click(self):
@@ -147,18 +135,18 @@ def delete_website_button_on_click(self):
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_website_button = _Button(category_settings, 'delete', 5, 3, 1, 1, [10, 5, 10, 5], delete_website_button_on_click)
+delete_website_button = _Button(category_settings, 'delete a website', 5, 3, 1, 1, [10, 5, 10, 5], delete_website_button_on_click)
 delete_website_button.create()
 
 
-category_frame = _ListBox(category_settings, categories, SINGLE, 28, 30, 0, 1, [5, 10, 5, 10], 3 , 6, on_category_select)
+category_frame = _ListBox(category_settings, categories, SINGLE, 33, 40, 0, 1, [5, 10, 5, 10], 3 , 6, on_category_select)
 category_frame.create()
 
 
 def add_category_button_on_click(self):
     def _():
         new_window = Toplevel()
-        new_window.title('adding')
+        new_window.title('adding a category')
         new_window_label = _Label(new_window, 'category name: ',0, 0, [10, 0, 0, 0], 1)
         new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2)
         
@@ -221,7 +209,7 @@ def rename_category_button_on_click(self):
     def _():
         if category_frame.value:
             new_window = Toplevel()
-            new_window.title('rename')
+            new_window.title('rename a category')
             new_window_label = _Label(new_window, 'category name: ',0, 0, [10, 0, 0, 0], 1)
             new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2, category_frame.value)
             
@@ -297,7 +285,7 @@ def add_schedule_button_on_click(self):
 
 
 
-add_schedule_button = _Button(category_settings, 'add', 4, 8, 1, 2, [10, 5, 10, 5], add_schedule_button_on_click)
+add_schedule_button = _Button(category_settings, 'add a schedule', 4, 8, 1, 2, [10, 5, 10, 5], add_schedule_button_on_click)
 add_schedule_button.create()
 
 def delete_schedule_button_on_click(self):
@@ -313,7 +301,7 @@ def delete_schedule_button_on_click(self):
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_schedule_button = _Button(category_settings, 'delete', 5, 8, 1, 2, [ 10, 5, 10, 5], delete_schedule_button_on_click)
+delete_schedule_button = _Button(category_settings, 'delete a schedule', 5, 8, 1, 2, [ 10, 5, 10, 5], delete_schedule_button_on_click)
 delete_schedule_button.create()
 
 
@@ -323,23 +311,21 @@ delete_schedule_button.create()
 _website_frame_label  = _Label(schedule_settings, 'websites', 4, 0, [ 10, 0, 0, 0], 2)
 _website_frame_label.create()
 
-# --------------------------------------------------------------------------------------------------------------
-_website_frame = _ListBox(schedule_settings, [], SINGLE, 16, 30, 4, 1, [10, 10, 5, 10], 2, 2)
+_website_frame = _ListBox(schedule_settings, [], SINGLE, 18, 45, 4, 1, [10, 10, 5, 10], 2, 2)
 _website_frame.create()
 
 _categorie_frame_label  = _Label(schedule_settings, 'categories', 4, 4, [0, 0, 0, 0], 2)
 _categorie_frame_label.create()
 
-# --------------------------------------------------------------------------------------------------------------
-_categorie_frame = _ListBox(schedule_settings, [], SINGLE, 7, 30, 4, 5, [10, 10, 5, 0], 2, 4)
+_categorie_frame = _ListBox(schedule_settings, [], SINGLE, 10, 45, 4, 5, [10, 10, 5, 0], 2, 4)
 _categorie_frame.create()
 
-durations_frame = _ListBox(schedule_settings, [], SINGLE, 4, 30, 0, 8, [5, 10, 5, 10], 3 , 2)
+durations_frame = _ListBox(schedule_settings, [], SINGLE, 6, 40, 0, 8, [5, 10, 5, 10], 3 , 2)
 durations_frame.create()
 
 def _on_schedule_select(self):
     def load_websites(value):
-        new_label = ' websites linked to ' + value
+        new_label = ' websites linked to' + value
         _website_frame_label.update_value(new_label)
         schedule = Schedule(value)
         schedule.load()
@@ -386,7 +372,7 @@ def _add_website_button_on_click(self):
     def _():
         if _schedule_frame.value:
             new_window = Toplevel()
-            new_window.title('adding')
+            new_window.title('adding a website')
             new_window_label = _Label(new_window, 'website name: ',0, 0, [10, 0, 0, 0], 1)
             new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2)
             
@@ -430,7 +416,7 @@ def _add_website_button_on_click(self):
         
 
 
-add_website_button = _Button(schedule_settings, 'add', 4, 3, 1, 1, [10, 5, 10, 5], _add_website_button_on_click)
+add_website_button = _Button(schedule_settings, 'add a website', 4, 3, 1, 1, [10, 5, 10, 5], _add_website_button_on_click)
 add_website_button.create()
 
 def _delete_website_button_on_click(self):
@@ -447,10 +433,10 @@ def _delete_website_button_on_click(self):
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_website_button = _Button(schedule_settings, 'delete', 5, 3, 1, 1, [10, 5, 10, 5], _delete_website_button_on_click)
+delete_website_button = _Button(schedule_settings, 'delete a website', 5, 3, 1, 1, [10, 5, 10, 5], _delete_website_button_on_click)
 delete_website_button.create()
 
-_schedule_frame = _ListBox(schedule_settings, schedules, SINGLE, 20, 30, 0, 1, [5, 10, 10, 10], 3 , 4, _on_schedule_select)
+_schedule_frame = _ListBox(schedule_settings, schedules, SINGLE, 22, 40, 0, 1, [5, 10, 10, 10], 3 , 4, _on_schedule_select)
 _schedule_frame.create()
 
 
@@ -460,7 +446,7 @@ _schedule_frame.create()
 def _add_schedule_button_on_click(self):
     def _():
         new_window = Toplevel()
-        new_window.title('adding')
+        new_window.title('adding a schedule')
         new_window_label = _Label(new_window, 'schedule name: ',0, 0, [10, 0, 0, 0], 1)
         new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2)
         new_window_time_picker_frame = Frame(new_window)
@@ -550,7 +536,7 @@ def edit_category_button_on_click(self):
             schedule = Schedule(_schedule_frame.value)
             schedule.load()
             new_window = Toplevel()
-            new_window.title('adding')
+            new_window.title('adding a schedule')
             new_window_label = _Label(new_window, 'schedule name: ',0, 0, [10, 0, 0, 0], 1)
             new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2, schedule.name)
             new_window_time_picker_frame = Frame(new_window)
@@ -649,7 +635,7 @@ def _add_category_button_on_click(self):
 
 
 
-add_schedule_button = _Button(schedule_settings, 'add', 4, 9, 1, 2, [10, 5, 10, 5], _add_category_button_on_click)
+add_schedule_button = _Button(schedule_settings, 'add a schedule', 4, 9, 1, 2, [10, 5, 10, 5], _add_category_button_on_click)
 add_schedule_button.create()
 
 def _delete_category_button_on_click(self):
@@ -666,7 +652,7 @@ def _delete_category_button_on_click(self):
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_schedule_button = _Button(schedule_settings, 'delete', 5, 9, 1, 2, [ 10, 5, 10, 5], _delete_category_button_on_click)
+delete_schedule_button = _Button(schedule_settings, 'delete a category', 5, 9, 1, 2, [ 10, 5, 10, 5], _delete_category_button_on_click)
 delete_schedule_button.create()
 
 
@@ -676,13 +662,13 @@ delete_schedule_button.create()
 
 
 
-current_active_categories = _ListBox(active, [], SINGLE, 5, 30, 0, 1, [10, 10, 10, 10], 1, 1)
-current_active_schedules = _ListBox(active, [], SINGLE, 5, 30, 0, 3, [10, 10, 10, 10], 1, 1)
-current_active_websites = _ListBox(active, [], SINGLE, 5, 30, 0, 5, [10, 10, 10, 10], 1, 1)
+current_active_categories = _ListBox(active, [], SINGLE, 7, 40, 1, 0, [10, 10, 10, 10], 1, 1)
+current_active_schedules = _ListBox(active, [], SINGLE, 7, 40, 4, 0, [10, 10, 10, 10], 1, 1)
+current_active_websites = _ListBox(active, [], SINGLE, 7, 40, 7, 0, [10, 30, 10, 10], 1, 1)
 
-current_active_categories_label = _Label(active, 'active ategories: ', 0, 0, [10, 10, 10, 30], 2)
-current_active_schedules_label = _Label(active, 'active schedules: ', 0, 2, [10, 10, 10, 10], 2)
-current_active_websites_label = _Label(active, 'active websites: ', 0, 4, [10, 10, 10, 10], 2)
+current_active_categories_label = _Label(active, 'active ategories: ', 0, 0, [10, 10, 10, 30], 1)
+current_active_schedules_label = _Label(active, 'active schedules: ', 3, 0, [10, 10, 10, 10], 1)
+current_active_websites_label = _Label(active, 'active websites: ', 6, 0, [10, 10, 10, 10], 1)
 
 current_active_categories_label.create()
 current_active_schedules_label.create()
@@ -717,10 +703,11 @@ def block(self):
 def exit(self):
     disable_event()
 
-delete_schedule_button = _Button(active, 'block', 0, 7, 2, 1, [ 10, 5, 10, 5], block, xspan=2)
+delete_schedule_button = _Button(root, 'block', 0, 2, 2, 1, [ 10, 5, 10, 5], block)
 delete_schedule_button.create()
 
-delete_schedule_button = _Button(active, 'exit', 0, 8, 2, 1, [ 10, 5, 5, 5], exit, xspan=2)
+delete_schedule_button = _Button(root, 'exit', 9, 2, 2, 1, [ 10, 5, 10, 5], exit)
 delete_schedule_button.create()
 
 root.mainloop()
+

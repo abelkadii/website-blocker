@@ -1,10 +1,4 @@
 from utils import *
-from constant import *
-from schedule import *
-import os
-
-import shutil
-
 
 class Category:
     def __init__(self, name):

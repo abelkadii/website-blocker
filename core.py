@@ -1,10 +1,4 @@
 from utils import *
-from datetime import datetime
-import threading
-from schedule import Schedule
-from category import Category
-from utils import *
-from time import sleep
 
 class Core:
     def _configure(categories, websites):
@@ -16,10 +10,9 @@ class Core:
                 category_object = Category(category)
                 configure_data += category_object._load_all_websites()
             a = datetime.now()
-            data = get_original_data() + f"\n{LOCALHOST_1} " if len(configure_data)>0 else ""
-            data += f"\n{LOCALHOST_1} ".join(configure_data)
-            data += join_if_not_ip_address(configure_data, f"\n{LOCALHOST_2} ") if len(configure_data)>0 else ""
-            file = open(HOST_FILE_PATH, "w")
+            data = get_original_data() + '\n' + LOCAL_HOST + ' '
+            data += f'\n{LOCAL_HOST} '.join(configure_data)
+            file = open(HOST_FILE_PATH, 'w')
             file.write(data)
             file.close()
             return SUCCESS
@@ -55,19 +48,19 @@ class Core:
             sleep(sleep_duration)
         
     def _start():
-        file = open(STATUS_FILE_PATH, "w")
+        file = open(STATUS_FILE_PATH, 'w')
         file.write(BLOCKING)
         file.close()
         return SUCCESS
         
     def _end():
-        file = open(STATUS_FILE_PATH, "w")
+        file = open(STATUS_FILE_PATH, 'w')
         file.write(DISABLED)
         file.close()
         return SUCCESS
 
     def _status():
-        file = open(STATUS_FILE_PATH, "r")
+        file = open(STATUS_FILE_PATH, 'r')
         status = file.read()
         file.close()
         return status

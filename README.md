@@ -81,7 +81,7 @@ This project demonstrates:
 
 
 ## 🏠 Main Interface
-![Main UI](./screenshots/minterface.png)
+![Main UI](./screenshots/interface.png)
 
 
 ---

@@ -1,48 +1,55 @@
-from random import randint
 from datetime import datetime
-from tkinter import *
-import threading
 from time import sleep
+from tkinter import *
+from tkinter.messagebox import showinfo
+import threading
 import json
 import os
 import shutil
-from tkinter.messagebox import showinfo
+import re
+
+# constant -FILE
 
 SCHEDULE_DIR_PATH = "data\schedule"
 CATEGORY_DIR_PATH = "data\category"
 ORIGINAL_HOST_FILE_PATH = "data\original"
 STATUS_FILE_PATH = "data\__status__"
 HOST_FILE_PATH = "c:\Windows\System32\Drivers\etc\hosts"
-LOCAL_HOST = "127.0.0.1"
+INIT_FILE = "__init__"
+LOCALHOST_1 = "127.0.0.1"
+LOCALHOST_2 = "0.0.0.0"
 
-ALREADY_EXSISTS = 'ALREADY_EXSISTS'
-SUCCESS = 'SUCCESS'
-DOES_NOT_EXSIST = 'DOES_NOT_EXSIST'
-CHANGE = 'CHANGE'
-STOPED = 'STOPED'
+ALREADY_EXSISTS = "ALREADY_EXSISTS"
+SUCCESS = "SUCCESS"
+DOES_NOT_EXSIST = "DOES_NOT_EXSIST"
+CHANGE = "CHANGE"
+STOPED = "STOPED"
 BLOCKING = "BLOCKING"
 DISABLED = "DISABLED"
-STARTING = 'START'
-ENDING = 'END'
-LOAD_ALL = 'load all'
+STARTING = "START"
+ENDING = "END"
+LOAD_ALL = "load all"
 
 SCHEDULE_TIME_FORMAT = "%H:%M:%S"
-INIT_FILE = "__init__"
+IP_ADDRESS_REGULAR_EXPRESSION = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+
+# utlis -FILE
 
 def get_original_data():
-    return open(ORIGINAL_HOST_FILE_PATH, 'r').read()
+    return open(ORIGINAL_HOST_FILE_PATH, "r").read()
 
 def join_path(*kw):
-    return '\\'.join([str(i) for i in kw])
+    return "\\".join([str(i) for i in kw])
 
 def pad(variable, length, to_last = False):
     variable = str(variable)
     if length > len(variable):
         return variable
-    return (length-len(variable)) * int(to_last) * '0' + variable + (length-len(variable)) * int(not to_last) * '0'
+    return (length-len(variable)) * int(to_last) * "0" + variable + (length-len(variable)) * int(not to_last) * "0"
 
 def write_init_file(name, length):
-    open(join_path(CATEGORY_DIR_PATH, name, INIT_FILE), 'w').write(length)
+    with open(join_path(CATEGORY_DIR_PATH, name, INIT_FILE), "w") as file:
+        file.write(length)
     return SUCCESS
  
 def get_init_file(name):
@@ -51,6 +58,18 @@ def get_init_file(name):
 def get_unique_elements(array, _array):
     return [i for i in array if i not in _array]
 
+
+def join_if_not_ip_address(array, value):
+    pattern = re.compile(IP_ADDRESS_REGULAR_EXPRESSION)
+    joint_array = "\n" + LOCALHOST_2 + ' '
+    joint_array += 'www.' if pattern.match(array[0]) else ''
+    for element in array:
+        if not pattern.match(element):
+            joint_array += 'www.'
+        joint_array += element + value
+    return joint_array
+
+# schedule -FILE
 
 class Schedule:
     def __init__(self, name):
@@ -62,15 +81,16 @@ class Schedule:
     def create(name, durations, categories=[], websites=[]):
         if os.path.exists(join_path(SCHEDULE_DIR_PATH, name)):
             return ALREADY_EXSISTS
-        write_file = open(join_path(SCHEDULE_DIR_PATH, name), 'w')
+        write_file = open(join_path(SCHEDULE_DIR_PATH, name), "w")
 
         schedule = {
-            'name': name,
-            'durations': durations,
-            'categories': categories,
-            'websites': websites
+            "name": name,
+            "durations": durations,
+            "categories": categories,
+            "websites": websites
         }
         write_file.write(json.dumps(schedule, indent=4))
+        write_file.close()
         return Schedule(name)
 
     def destroy(self):
@@ -83,11 +103,11 @@ class Schedule:
 
 
     def _get(self):
-        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'r')
+        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "r")
         file_data = json.load(read_file)
-        self.websites = file_data.get('websites')
-        self.categories = file_data.get('categories')
-        self.durations = file_data.get('durations')
+        self.websites = file_data.get("websites")
+        self.categories = file_data.get("categories")
+        self.durations = file_data.get("durations")
         
 
     def is_active(self):
@@ -102,57 +122,57 @@ class Schedule:
                 return True
 
     def add_category_to_schedule(self, category_name):
-        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'r')
+        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "r")
         file_data = json.load(read_file)
-        file_data.get('categories').append(category_name)
+        file_data.get("categories").append(category_name)
         if self.categories == None:
             self.load()
         self.categories.append(category_name)
-        write_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'w')
+        write_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "w")
         json.dump(file_data, write_file, indent=4)
         return SUCCESS
     
     def add_website_to_schedule(self, website_name):
-        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'r')
+        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "r")
         file_data = json.load(read_file)
-        file_data.get('websites').append(website_name)
+        file_data.get("websites").append(website_name)
         if self.categories == None:
             self.load()
         self.categories.append(website_name)
-        write_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'w')
+        write_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "w")
         json.dump(file_data, write_file, indent=4)
         return SUCCESS
     
     def delete_category_from_schedule(self, category_name):
-        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'r')
+        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "r")
         file_data = json.load(read_file)
-        file_data.get('categories').remove(category_name)
+        file_data.get("categories").remove(category_name)
         if self.categories == None:
             self.load()
         self.categories.remove(category_name)
-        write_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'w')
+        write_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "w")
         json.dump(file_data, write_file, indent=4)
         return SUCCESS
     
     def delete_website_from_schedule(self, website_name):
-        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'r')
+        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "r")
         file_data = json.load(read_file)
-        file_data.get('websites').remove(website_name)
+        file_data.get("websites").remove(website_name)
         if self.websites == None:
             self.load()
         self.websites.remove(website_name)
-        write_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'w')
+        write_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "w")
         json.dump(file_data, write_file, indent=4)
         return SUCCESS
 
     def edit(self, durations, new_name):
         if os.path.exists(join_path(SCHEDULE_DIR_PATH, new_name)):
             return ALREADY_EXSISTS
-        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), 'r')
+        read_file = open(join_path(SCHEDULE_DIR_PATH, self.name), "r")
         file_data = json.load(read_file)
-        file_data['durations'] = durations
-        file_data['name'] = new_name
-        write_file = open(join_path(SCHEDULE_DIR_PATH, new_name), 'w')
+        file_data["durations"] = durations
+        file_data["name"] = new_name
+        write_file = open(join_path(SCHEDULE_DIR_PATH, new_name), "w")
         json.dump(file_data, write_file, indent=4)
         write_file.close()
         self.name = new_name
@@ -162,16 +182,16 @@ class Schedule:
     def get_schedules_for_category(category):
         schedules = []
         for schedule in os.listdir(SCHEDULE_DIR_PATH):
-            read_file = json.load(open(join_path(SCHEDULE_DIR_PATH, schedule), 'r'))
-            if category in read_file.get('categories'):
+            read_file = json.load(open(join_path(SCHEDULE_DIR_PATH, schedule), "r"))
+            if category in read_file.get("categories"):
                 schedules.append(schedule)
         return schedules
     
     def get_schedules_for_website(website):
         schedules = []
         for schedule in os.listdir(SCHEDULE_DIR_PATH):
-            read_file = json.load(open(join_path(SCHEDULE_DIR_PATH, schedule), 'r'))
-            if website in read_file.get('websites'):
+            read_file = json.load(open(join_path(SCHEDULE_DIR_PATH, schedule), "r"))
+            if website in read_file.get("websites"):
                 schedules.append(schedule)
         return schedules
 
@@ -192,6 +212,7 @@ class Schedule:
         return os.listdir(SCHEDULE_DIR_PATH)
 
 
+# category -FILE
 
 class Category:
     def __init__(self, name):
@@ -262,8 +283,8 @@ class Category:
         if website_name not in data:
             return DOES_NOT_EXSIST
         index = data.index(website_name)
-        data[index] = website_name + '[frozen]'
-        if self.websites: self.websites[index] = website_name + '[frozen]'
+        data[index] = website_name + "[frozen]"
+        if self.websites: self.websites[index] = website_name + "[frozen]"
         self._write_websites()
         return SUCCESS
     
@@ -283,8 +304,8 @@ class Category:
     def _load_all_websites(self):
         data = []
         for file_name in os.listdir(join_path(CATEGORY_DIR_PATH, self.name)):
-            if file_name != '__init__':
-                data += open(join_path(CATEGORY_DIR_PATH, self.name, file_name), 'r').read().split()
+            if file_name != "__init__":
+                data += open(join_path(CATEGORY_DIR_PATH, self.name, file_name), "r").read().split()
         self.websites = data
         self.length = get_init_file(self.name)
         self.loaded = True
@@ -298,19 +319,23 @@ class Category:
         path = join_path(CATEGORY_DIR_PATH, self.name)
         for i in range(((_len := len(websites))//self.length)+1):
             padded_name = pad(i+1, len(str(len(websites)//self.length))+1)
-            write_file = open(join_path(path, padded_name), 'w')
+            write_file = open(join_path(path, padded_name), "w")
             start = self.length*i
             end = self.length*(i+1) if self.length*(i+1) < _len-1 else _len -1
-            write_file.write('\n'.join(websites[start:end]))
+            write_file.write("\n".join(websites[start:end]))
+            write_file.close()
         return SUCCESS
     
     def _load_part_websites(self):
         if len(os.listdir(join_path(CATEGORY_DIR_PATH, self.name)))>1:
             length = len(str(len(os.listdir(join_path(CATEGORY_DIR_PATH, self.name)))))
-            data = open(join_path(CATEGORY_DIR_PATH, self.name, pad(self.part, length)), 'r').read().split('\n')
+            data = open(join_path(CATEGORY_DIR_PATH, self.name, pad(self.part, length)), "r").read().split("\n")
             self.websites = self.websites if self.loaded else self.websites + data
             self.part += 1
         return self.websites
+
+
+# website -FILE
 
 class Website:
     def __init__(self, url):
@@ -341,6 +366,8 @@ class Website:
     def _get_schedules(self):
         return Schedule.get_schedules_for_website(self.name)
 
+
+# display -FILE
 
 class _ListBox:
     def __init__(self, root, values, mode, height, width, position_x, position_y, pad, xspan, yspan, onClick=lambda self: None, default=None, link=None):
@@ -375,11 +402,11 @@ class _ListBox:
     def create(self):
         categories_var = StringVar(value=tuple(self.values))
         self.listbox = Listbox(self.root, listvariable=categories_var, height=self.height, selectmode=self.mode, width=self.width)
-        scrollbar = Scrollbar(self.root, orient='vertical', command=self.listbox.yview)
-        self.listbox['yscrollcommand'] = scrollbar.set
-        self.listbox.grid(column=self.position_x, row=self.position_y, sticky='nwes', pady=(self.pad[0], self.pad[2]), padx=(self.pad[3], 0), columnspan=self.xspan, rowspan=self.yspan)
-        scrollbar.grid(column=self.position_x+self.xspan, row=self.position_y, sticky='ns', padx=(0, self.pad[1]), pady=(self.pad[0], self.pad[2]), rowspan=self.yspan)
-        self.listbox.bind('<<ListboxSelect>>', lambda event: self.onClick(self))
+        scrollbar = Scrollbar(self.root, orient="vertical", command=self.listbox.yview)
+        self.listbox["yscrollcommand"] = scrollbar.set
+        self.listbox.grid(column=self.position_x, row=self.position_y, sticky="nwes", pady=(self.pad[0], self.pad[2]), padx=(self.pad[3], 0), columnspan=self.xspan, rowspan=self.yspan)
+        scrollbar.grid(column=self.position_x+self.xspan, row=self.position_y, sticky="ns", padx=(0, self.pad[1]), pady=(self.pad[0], self.pad[2]), rowspan=self.yspan)
+        self.listbox.bind("<<ListboxSelect>>", lambda event: self.onClick(self))
     
     def destroy(self):
         self.listbox.destroy()
@@ -410,7 +437,7 @@ class _Label:
 
     def create(self):
         self.label = Label(self.root, text=self.value)
-        self.label.grid(column=self.position_x, row=self.position_y, sticky='nwes', pady=(self.pad[0], self.pad[2]), padx=(self.pad[1], self.pad[3]), columnspan=self.xspan)
+        self.label.grid(column=self.position_x, row=self.position_y, sticky="nwes", pady=(self.pad[0], self.pad[2]), padx=(self.pad[1], self.pad[3]), columnspan=self.xspan)
     
     def destroy(self):
         self.label.destroy()
@@ -420,7 +447,7 @@ class _Label:
         self.label.configure(text=value)
 
 class _Button:
-    def __init__(self, root, text, position_x, position_y, height, width, pad, onClick):
+    def __init__(self, root, text, position_x, position_y, height, width, pad, onClick, xspan=1):
         self.root = root
         self.text = text
         self.position_x = position_x
@@ -428,12 +455,13 @@ class _Button:
         self.height = height
         self.width = width
         self.pad = pad
+        self.xspan = xspan
         self.bind_component = []
         self.onClick = onClick
 
     def create(self):
         self.button = Button(self.root, text=self.text, command=lambda: self.onClick(self), height=self.height, width=self.width)
-        self.button.grid(column=self.position_x, row=self.position_y, sticky='nwes', pady=(self.pad[0], self.pad[2]), padx=(self.pad[1], self.pad[3]))
+        self.button.grid(column=self.position_x, row=self.position_y, sticky="nwes", pady=(self.pad[0], self.pad[2]), padx=(self.pad[1], self.pad[3]), columnspan=self.xspan)
     
     def destroy(self):
         self.button.destroy()
@@ -446,7 +474,7 @@ class _Button:
 
 
 class _Entry:
-    def __init__(self, root, position_x, position_y, pad, border_width, xspan, default=''):
+    def __init__(self, root, position_x, position_y, pad, border_width, xspan, default=""):
         self.root = root
         self.position_x = position_x
         self.position_y = position_y
@@ -459,7 +487,7 @@ class _Entry:
     def create(self):
         self.entry = Entry(self.root, borderwidth=self.border_width)
         self.entry.insert(0, self.default)
-        self.entry.grid(column=self.position_x, row=self.position_y, sticky='nwes', pady=(self.pad[0], self.pad[2]), padx=(self.pad[1], self.pad[3]), columnspan=self.xspan)
+        self.entry.grid(column=self.position_x, row=self.position_y, sticky="nwes", pady=(self.pad[0], self.pad[2]), padx=(self.pad[1], self.pad[3]), columnspan=self.xspan)
     
     def destroy(self):
         self.entry.destroy()
@@ -472,7 +500,7 @@ class _Entry:
 
 
 class TimePicker:
-    def __init__(self, frame, row, _default='00:00:00', default_='23:59:59'):
+    def __init__(self, frame, row, _default="00:00:00", default_="23:59:59"):
         self.frame = frame
         self.row = row
         self.is_destroyed = False
@@ -493,25 +521,25 @@ class TimePicker:
             self.destroy_button.destroy()
             self.is_destroyed = True
 
-        self._hourstr= StringVar(self.frame, self._default.split(':')[0])
-        self._minutestr= StringVar(self.frame, self._default.split(':')[1])
-        self._secondstr= StringVar(self.frame, self._default.split(':')[2])
+        self._hourstr= StringVar(self.frame, self._default.split(":")[0])
+        self._minutestr= StringVar(self.frame, self._default.split(":")[1])
+        self._secondstr= StringVar(self.frame, self._default.split(":")[2])
         
-        self.hourstr_= StringVar(self.frame, self.default_.split(':')[0])
-        self.minutestr_= StringVar(self.frame, self.default_.split(':')[1])
-        self.secondstr_= StringVar(self.frame, self.default_.split(':')[2])
+        self.hourstr_= StringVar(self.frame, self.default_.split(":")[0])
+        self.minutestr_= StringVar(self.frame, self.default_.split(":")[1])
+        self.secondstr_= StringVar(self.frame, self.default_.split(":")[2])
 
-        self._hour = Spinbox(self.frame,from_=0,to=23,wrap=True,textvariable=self._hourstr,width=2,state='readonly')
-        self._minute = Spinbox(self.frame,from_=0,to=59,wrap=True,textvariable=self._minutestr,width=2,state='readonly')
-        self._second = Spinbox(self.frame,from_=0,to=59,wrap=True,textvariable=self._secondstr,width=2,state='readonly')
-        self.label_ = Label(self.frame, text='to: ')
+        self._hour = Spinbox(self.frame,from_=0,to=23,wrap=True,textvariable=self._hourstr,width=2,state="readonly")
+        self._minute = Spinbox(self.frame,from_=0,to=59,wrap=True,textvariable=self._minutestr,width=2,state="readonly")
+        self._second = Spinbox(self.frame,from_=0,to=59,wrap=True,textvariable=self._secondstr,width=2,state="readonly")
+        self.label_ = Label(self.frame, text="to: ")
         
-        self.hour_ = Spinbox(self.frame,from_=0,to=23,wrap=True,textvariable=self.hourstr_,width=2,state='readonly')
-        self.minute_ = Spinbox(self.frame,from_=0,to=59,wrap=True,textvariable=self.minutestr_,width=2,state='readonly')
-        self.second_ = Spinbox(self.frame,from_=0,to=59,wrap=True,textvariable=self.secondstr_,width=2,state='readonly')
-        self._label = Label(self.frame, text='from: ')
+        self.hour_ = Spinbox(self.frame,from_=0,to=23,wrap=True,textvariable=self.hourstr_,width=2,state="readonly")
+        self.minute_ = Spinbox(self.frame,from_=0,to=59,wrap=True,textvariable=self.minutestr_,width=2,state="readonly")
+        self.second_ = Spinbox(self.frame,from_=0,to=59,wrap=True,textvariable=self.secondstr_,width=2,state="readonly")
+        self._label = Label(self.frame, text="from: ")
 
-        self.destroy_button = Button(self.frame, text='-', command=destroy_button)
+        self.destroy_button = Button(self.frame, text="-", command=destroy_button)
 
 
         self._label.grid(column=0, row=self.row, padx=5, pady=5)
@@ -535,10 +563,11 @@ class TimePicker:
             minute_ = self.minute_.get()
             second_ = self.second_.get()
 
-            return '{}:{}:{}'.format(_hour, _minute, _second), '{}:{}:{}'.format(hour_, minute_, second_)
+            return "{}:{}:{}".format(_hour, _minute, _second), "{}:{}:{}".format(hour_, minute_, second_)
         return None, None 
 
 
+# core -FILE
 
 class Core:
     def _configure(categories, websites):
@@ -550,9 +579,10 @@ class Core:
                 category_object = Category(category)
                 configure_data += category_object._load_all_websites()
             a = datetime.now()
-            data = get_original_data() + '\n' + LOCAL_HOST + ' '
-            data += f'\n{LOCAL_HOST} '.join(configure_data)
-            file = open(HOST_FILE_PATH, 'w')
+            data = get_original_data() + f"\n{LOCALHOST_1} " if len(configure_data)>0 else ""
+            data += f"\n{LOCALHOST_1} ".join(configure_data)
+            data += join_if_not_ip_address(configure_data, f"\n{LOCALHOST_2} ") if len(configure_data)>0 else ""
+            file = open(HOST_FILE_PATH, "w")
             file.write(data)
             file.close()
             return SUCCESS
@@ -588,40 +618,43 @@ class Core:
             sleep(sleep_duration)
         
     def _start():
-        file = open(STATUS_FILE_PATH, 'w')
+        file = open(STATUS_FILE_PATH, "w")
         file.write(BLOCKING)
         file.close()
         return SUCCESS
         
     def _end():
-        file = open(STATUS_FILE_PATH, 'w')
+        file = open(STATUS_FILE_PATH, "w")
         file.write(DISABLED)
         file.close()
         return SUCCESS
 
     def _status():
-        file = open(STATUS_FILE_PATH, 'r')
+        file = open(STATUS_FILE_PATH, "r")
         status = file.read()
         file.close()
         return status
 
 root = Tk()
-root.title('website blocker')
-root.iconbitmap('favicon.ico')
+root.title("website blocker")
+root.iconbitmap("favicon.ico")
 def disable_event():
     Core._end()
     root.destroy()
 
+
+# main -FILE
+
 root.protocol("WM_DELETE_WINDOW", disable_event)
 
-category_settings = LabelFrame(root, text='category settings', padx=10, pady=10)
-category_settings.grid(column=0, row=0, padx=10, pady=10, columnspan=5)
+category_settings = LabelFrame(root, text="category settings", padx=10, pady=10)
+category_settings.grid(column=0, row=0, padx=10, pady=10)
 
-schedule_settings = LabelFrame(root, text='schedule settings', padx=10, pady=10)
-schedule_settings.grid(column=5, row=0, padx=10, pady=10, columnspan=5)
+schedule_settings = LabelFrame(root, text="schedule settings", padx=10, pady=10)
+schedule_settings.grid(column=1, row=0, padx=10, pady=10)
 
-active = LabelFrame(root, text='active', padx=10, pady=10)
-active.grid(column=0, row=1, padx=10, pady=10, columnspan=10)
+active = LabelFrame(root, text="active", padx=10, pady=10)
+active.grid(column=2, row=0, padx=10, pady=10)
 
 schedules = Schedule.get_all()
 categories = Category.get_all()
@@ -635,22 +668,24 @@ def on_website_click(self):
         thread = threading.Thread(target=load)
         thread.start()
 
-website_frame_label  = _Label(category_settings, 'websites', 4, 0, [ 10, 0, 0, 0], 2)
+website_frame_label  = _Label(category_settings, "websites", 4, 0, [ 10, 0, 0, 0], 2)
 website_frame_label.create()
 
-website_frame = _ListBox(category_settings, [], SINGLE, 18, 45, 4, 1, [10, 10, 5, 10], 2, 2, on_website_click)
+# --------------------------------------------------------------------------------------------------------------
+website_frame = _ListBox(category_settings, [], SINGLE, 17, 30, 4, 1, [10, 10, 5, 10], 2, 2, on_website_click)
 website_frame.create()
 
-schedule_frame_label  = _Label(category_settings, 'schedules', 4, 4, [0, 0, 0, 0], 2)
+schedule_frame_label  = _Label(category_settings, "schedules", 4, 4, [0, 0, 0, 0], 2)
 schedule_frame_label.create()
 
-schedule_frame = _ListBox(category_settings, [], SINGLE, 9, 45, 4, 5, [0, 10, 5, 0], 2, 3)
+# --------------------------------------------------------------------------------------------------------------
+schedule_frame = _ListBox(category_settings, [], SINGLE, 5, 30, 4, 5, [0, 10, 5, 0], 2, 3)
 schedule_frame.create()
 
 
 def on_category_select(self):
     def load_part_websites(value):
-        new_label = value + ' websites'
+        new_label = value + " websites"
         website_frame_label.update_value(new_label)
         category = Category(value)
         websites = category._load_part_websites()
@@ -661,7 +696,7 @@ def on_category_select(self):
         website_frame.update_value(websites)
     
     def load_schedules(value):
-        new_label = value + ' schedules'
+        new_label = value + " schedules"
         schedule_frame_label.update_value(new_label)
         category = Category(value)
         schedules = category.schedules
@@ -674,31 +709,31 @@ def on_category_select(self):
     website_thread.start()
     schedule_thread.start()
 
-category_frame_label  = _Label(category_settings, 'categories', 0, 0, [ 10, 0, 0, 0], 2)
+category_frame_label  = _Label(category_settings, "categories", 0, 0, [ 10, 0, 0, 0], 3)
 category_frame_label.create()
 
 def add_website_button_on_click(self):  
     def _():
         if category_frame.value:
             new_window = Toplevel()
-            new_window.title('adding a website')
-            new_window_label = _Label(new_window, 'website name: ',0, 0, [10, 0, 0, 0], 1)
+            new_window.title("adding")
+            new_window_label = _Label(new_window, "website name: ",0, 0, [10, 0, 0, 0], 1)
             new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2)
             
             def cancel(self):
                 new_window.destroy()
 
             def save(self):
-                if new_window_entry.get_value() != '':
+                if new_window_entry.get_value() != "":
                     category = Category(category_frame.value)
                     output = category.add_website_to_category(new_window_entry.get_value())
                     if output == SUCCESS:
                         websites = category._load_all_websites()
                         website_frame.update_value(websites)
                     elif output==ALREADY_EXSISTS:
-                        showinfo('adding website', 'website already exists')
+                        showinfo("adding website", "website already exists")
                 else:
-                    showinfo('adding website', 'a name is requiered')
+                    showinfo("adding website", "a name is requiered")
             
 
             def save_add(self):
@@ -709,22 +744,22 @@ def add_website_button_on_click(self):
                 save(self)
                 cancel(self)
 
-            new_window_button_save_and_exit = _Button(new_window, 'save and exit', 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
-            new_window_button_save_and_add = _Button(new_window, 'save and add', 1, 1, 2, 15, [10, 5, 10, 5], save_add)
-            new_window_button_canel = _Button(new_window, 'cancel', 2, 1, 2, 15, [10, 5, 10, 5], cancel)
+            new_window_button_save_and_exit = _Button(new_window, "save and exit", 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
+            new_window_button_save_and_add = _Button(new_window, "save and add", 1, 1, 2, 15, [10, 5, 10, 5], save_add)
+            new_window_button_canel = _Button(new_window, "cancel", 2, 1, 2, 15, [10, 5, 10, 5], cancel)
             new_window_label.create()
             new_window_entry.create()
             new_window_button_save_and_exit.create()
             new_window_button_save_and_add.create()
             new_window_button_canel.create()
         else:
-            showinfo('add website', 'no category selected')
+            showinfo("add website", "no category selected")
     thread = threading.Thread(target=_)
     thread.start()
         
 
 
-add_website_button = _Button(category_settings, 'add a website', 4, 3, 1, 1, [10, 5, 10, 5], add_website_button_on_click)
+add_website_button = _Button(category_settings, "add", 4, 3, 1, 1, [10, 5, 10, 5], add_website_button_on_click)
 add_website_button.create()
 
 def delete_website_button_on_click(self):
@@ -734,40 +769,40 @@ def delete_website_button_on_click(self):
             category.delete_website_from_category(website_frame.value)
             websites = category._load_all_websites()
             website_frame.update_value(websites)
-            showinfo('delete website', 'website deleted')
+            showinfo("delete website", "website deleted")
         else:
-            showinfo('delete website', 'no website selected')
+            showinfo("delete website", "no website selected")
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_website_button = _Button(category_settings, 'delete a website', 5, 3, 1, 1, [10, 5, 10, 5], delete_website_button_on_click)
+delete_website_button = _Button(category_settings, "delete", 5, 3, 1, 1, [10, 5, 10, 5], delete_website_button_on_click)
 delete_website_button.create()
 
 
-category_frame = _ListBox(category_settings, categories, SINGLE, 33, 40, 0, 1, [5, 10, 5, 10], 3 , 6, on_category_select)
+category_frame = _ListBox(category_settings, categories, SINGLE, 28, 30, 0, 1, [5, 10, 5, 10], 3 , 6, on_category_select)
 category_frame.create()
 
 
 def add_category_button_on_click(self):
     def _():
         new_window = Toplevel()
-        new_window.title('adding a category')
-        new_window_label = _Label(new_window, 'category name: ',0, 0, [10, 0, 0, 0], 1)
+        new_window.title("adding")
+        new_window_label = _Label(new_window, "category name: ",0, 0, [10, 0, 0, 0], 1)
         new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2)
         
         def cancel(self):
             new_window.destroy()
 
         def save(self):
-            if new_window_entry.get_value() != '':
+            if new_window_entry.get_value() != "":
                 output = Category.create(new_window_entry.get_value(), 100)
                 if output==ALREADY_EXSISTS:
-                    showinfo('adding category', 'category already exists')
+                    showinfo("adding category", "category already exists")
                 else:
                     categories = Category.get_all()
                     category_frame.update_value(categories)
             else:
-                    showinfo('adding category', 'a name is requiered')
+                    showinfo("adding category", "a name is requiered")
         
         def save_add(self):
                 save(self)
@@ -777,9 +812,9 @@ def add_category_button_on_click(self):
             save(self)
             cancel(self)
 
-        new_window_button_save_and_exit = _Button(new_window, 'save and exit', 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
-        new_window_button_save_and_add = _Button(new_window, 'save and add', 1, 1, 2, 15, [10, 5, 10, 5], save_add)
-        new_window_button_canel = _Button(new_window, 'cancel', 2, 1, 2, 15, [10, 5, 10, 5], cancel)
+        new_window_button_save_and_exit = _Button(new_window, "save and exit", 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
+        new_window_button_save_and_add = _Button(new_window, "save and add", 1, 1, 2, 15, [10, 5, 10, 5], save_add)
+        new_window_button_canel = _Button(new_window, "cancel", 2, 1, 2, 15, [10, 5, 10, 5], cancel)
         new_window_label.create()
         new_window_entry.create()
         new_window_button_save_and_exit.create()
@@ -788,7 +823,7 @@ def add_category_button_on_click(self):
     thread = threading.Thread(target=_)
     thread.start()
 
-add_category_button = _Button(category_settings, 'add', 0, 8, 2, 1, [10, 5, 10, 5], add_category_button_on_click)
+add_category_button = _Button(category_settings, "add", 0, 8, 2, 1, [10, 5, 10, 5], add_category_button_on_click)
 add_category_button.create()
  
 def delete_category_button_on_click(self):
@@ -801,56 +836,56 @@ def delete_category_button_on_click(self):
             website_frame.update_value([])
             schedule_frame.update_value([])
 
-            showinfo('delete category', 'category deleted')
+            showinfo("delete category", "category deleted")
         else:
-            showinfo('delete category', 'no category selected')
+            showinfo("delete category", "no category selected")
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_category_button = _Button(category_settings, 'delete', 1, 8, 2, 1, [10, 5, 10, 5], delete_category_button_on_click)
+delete_category_button = _Button(category_settings, "delete", 1, 8, 2, 1, [10, 5, 10, 5], delete_category_button_on_click)
 delete_category_button.create()
  
 def rename_category_button_on_click(self): 
     def _():
         if category_frame.value:
             new_window = Toplevel()
-            new_window.title('rename a category')
-            new_window_label = _Label(new_window, 'category name: ',0, 0, [10, 0, 0, 0], 1)
+            new_window.title("rename")
+            new_window_label = _Label(new_window, "category name: ",0, 0, [10, 0, 0, 0], 1)
             new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2, category_frame.value)
             
             def cancel(self):
                 new_window.destroy()
 
             def save(self):
-                if new_window_entry.get_value() != '':
+                if new_window_entry.get_value() != "":
                     category = Category(category_frame.value)
                     output = category.rename(new_window_entry.get_value())
                     if output == SUCCESS:
                         categories = Category.get_all()
                         category_frame.update_value(categories)
                     elif output==ALREADY_EXSISTS:
-                        showinfo('rename category', 'category already exists')
+                        showinfo("rename category", "category already exists")
                 else:
-                    showinfo('rename category', 'a name is requiered')
+                    showinfo("rename category", "a name is requiered")
             
                 
             def save_and_exit(self):
                 save(self)
                 cancel(self)
 
-            new_window_button_save_and_exit = _Button(new_window, 'save', 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
-            new_window_button_canel = _Button(new_window, 'cancel', 2, 1, 2, 15, [10, 5, 10, 5], cancel)
+            new_window_button_save_and_exit = _Button(new_window, "save", 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
+            new_window_button_canel = _Button(new_window, "cancel", 2, 1, 2, 15, [10, 5, 10, 5], cancel)
             new_window_label.create()
             new_window_entry.create()
             new_window_button_save_and_exit.create()
             new_window_button_canel.create()
         else:
-            showinfo('add website', 'no category selected')
+            showinfo("add website", "no category selected")
     thread = threading.Thread(target=_)
     thread.start()
 
 
-rename_category_button = _Button(category_settings, 'rename', 2, 8, 2, 1, [10, 5, 10, 5], rename_category_button_on_click)
+rename_category_button = _Button(category_settings, "rename", 2, 8, 2, 1, [10, 5, 10, 5], rename_category_button_on_click)
 rename_category_button.create()
 
 def add_schedule_button_on_click(self):
@@ -859,7 +894,7 @@ def add_schedule_button_on_click(self):
             new_window = Toplevel()
             schedules = get_unique_elements(Schedule.get_all(), schedule_frame.values)
             schedule__frame = _ListBox(new_window, schedules, MULTIPLE, 18, 25, 1, 0, [10, 10, 5, 10], 1, 1)
-            schedule_frame_label  = _Label(new_window, 'choose schedules: ',0 , 0, [ 10, 10, 10, 0], 1)  
+            schedule_frame_label  = _Label(new_window, "choose schedules: ",0 , 0, [ 10, 10, 10, 0], 1)  
             def cancel(self):
                     new_window.destroy()
 
@@ -873,14 +908,14 @@ def add_schedule_button_on_click(self):
                     category_schedules = Schedule.get_schedules_for_category(category_frame.value)
                     schedule_frame.update_value(category_schedules)
                 else:
-                    showinfo('add schedule', 'no schedule selected')
+                    showinfo("add schedule", "no schedule selected")
             
             def save_and_exit(self):
                 save(self)
                 cancel(self)
 
-            new_window_button_save_and_exit = _Button(new_window, 'save', 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
-            new_window_button_canel = _Button(new_window, 'cancel', 1, 1, 2, 15, [10, 5, 10, 5], cancel)
+            new_window_button_save_and_exit = _Button(new_window, "save", 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
+            new_window_button_canel = _Button(new_window, "cancel", 1, 1, 2, 15, [10, 5, 10, 5], cancel)
             new_window_button_save_and_exit.create()
             new_window_button_canel.create()
             schedule__frame.create()
@@ -890,7 +925,7 @@ def add_schedule_button_on_click(self):
 
 
 
-add_schedule_button = _Button(category_settings, 'add a schedule', 4, 8, 1, 2, [10, 5, 10, 5], add_schedule_button_on_click)
+add_schedule_button = _Button(category_settings, "add", 4, 8, 1, 2, [10, 5, 10, 5], add_schedule_button_on_click)
 add_schedule_button.create()
 
 def delete_schedule_button_on_click(self):
@@ -900,37 +935,39 @@ def delete_schedule_button_on_click(self):
             schedule.delete_category_from_schedule(category_frame.value)
             schedules = Schedule.get_schedules_for_category(category_frame.value)
             schedule_frame.update_value(schedules)
-            showinfo('delete schedule', 'schedule deleted')
+            showinfo("delete schedule", "schedule deleted")
         else:
-            showinfo('delete schedule', 'no schedule selected')
+            showinfo("delete schedule", "no schedule selected")
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_schedule_button = _Button(category_settings, 'delete a schedule', 5, 8, 1, 2, [ 10, 5, 10, 5], delete_schedule_button_on_click)
+delete_schedule_button = _Button(category_settings, "delete", 5, 8, 1, 2, [ 10, 5, 10, 5], delete_schedule_button_on_click)
 delete_schedule_button.create()
 
 
 # schedule settings
 
 
-_website_frame_label  = _Label(schedule_settings, 'websites', 4, 0, [ 10, 0, 0, 0], 2)
+_website_frame_label  = _Label(schedule_settings, "websites", 4, 0, [ 10, 0, 0, 0], 2)
 _website_frame_label.create()
 
-_website_frame = _ListBox(schedule_settings, [], SINGLE, 18, 45, 4, 1, [10, 10, 5, 10], 2, 2)
+# --------------------------------------------------------------------------------------------------------------
+_website_frame = _ListBox(schedule_settings, [], SINGLE, 16, 30, 4, 1, [10, 10, 5, 10], 2, 2)
 _website_frame.create()
 
-_categorie_frame_label  = _Label(schedule_settings, 'categories', 4, 4, [0, 0, 0, 0], 2)
+_categorie_frame_label  = _Label(schedule_settings, "categories", 4, 4, [0, 0, 0, 0], 2)
 _categorie_frame_label.create()
 
-_categorie_frame = _ListBox(schedule_settings, [], SINGLE, 10, 45, 4, 5, [10, 10, 5, 0], 2, 4)
+# --------------------------------------------------------------------------------------------------------------
+_categorie_frame = _ListBox(schedule_settings, [], SINGLE, 7, 30, 4, 5, [10, 10, 5, 0], 2, 4)
 _categorie_frame.create()
 
-durations_frame = _ListBox(schedule_settings, [], SINGLE, 6, 40, 0, 8, [5, 10, 5, 10], 3 , 2)
+durations_frame = _ListBox(schedule_settings, [], SINGLE, 4, 30, 0, 8, [5, 10, 5, 10], 3 , 2)
 durations_frame.create()
 
 def _on_schedule_select(self):
     def load_websites(value):
-        new_label = ' websites linked to' + value
+        new_label = " websites linked to " + value
         _website_frame_label.update_value(new_label)
         schedule = Schedule(value)
         schedule.load()
@@ -940,7 +977,7 @@ def _on_schedule_select(self):
         _website_frame.update_value(websites)
     
     def _load_categories(value):
-        new_label = ' categories linked to ' + value
+        new_label = " categories linked to " + value
         _categorie_frame_label.update_value(new_label)
         schedule = Schedule(value)
         schedule.load()
@@ -950,11 +987,11 @@ def _on_schedule_select(self):
         _categorie_frame.update_value(categories)
     
     def _load_durations(value):
-        new_label = 'durations linked to ' + value
+        new_label = "durations linked to " + value
         durations_frame_label.update_value(new_label)
         schedule = Schedule(value)
         schedule.load()
-        categories = ['from {} to {}'.format(duration[0], duration[1]) for duration in schedule.durations]
+        categories = ["from {} to {}".format(duration[0], duration[1]) for duration in schedule.durations]
         durations_frame._update_link(value)
         durations_frame.value = None
         durations_frame.update_value(categories)
@@ -966,10 +1003,10 @@ def _on_schedule_select(self):
     duraitons_thread.start()
     schedule_thread.start()
 
-_schedule_frame_label  = _Label(schedule_settings, 'schedules', 0, 0, [ 10, 0, 0, 0], 3)
+_schedule_frame_label  = _Label(schedule_settings, "schedules", 0, 0, [ 10, 0, 0, 0], 3)
 _schedule_frame_label.create()
 
-durations_frame_label  = _Label(schedule_settings, 'durations', 0, 7, [ 10, 0, 0, 0], 3)
+durations_frame_label  = _Label(schedule_settings, "durations", 0, 7, [ 10, 0, 0, 0], 3)
 durations_frame_label.create()
 
 
@@ -977,15 +1014,15 @@ def _add_website_button_on_click(self):
     def _():
         if _schedule_frame.value:
             new_window = Toplevel()
-            new_window.title('adding a website')
-            new_window_label = _Label(new_window, 'website name: ',0, 0, [10, 0, 0, 0], 1)
+            new_window.title("adding")
+            new_window_label = _Label(new_window, "website name: ",0, 0, [10, 0, 0, 0], 1)
             new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2)
             
             def cancel(self):
                 new_window.destroy()
 
             def save(self):
-                if new_window_entry.get_value() != '':
+                if new_window_entry.get_value() != "":
                     schedule = Schedule(_schedule_frame.value)
                     output = schedule.add_website_to_schedule(new_window_entry.get_value())
                     if output == SUCCESS:
@@ -993,9 +1030,9 @@ def _add_website_button_on_click(self):
                         websites = schedule.websites
                         _website_frame.update_value(websites)
                     elif output==ALREADY_EXSISTS:
-                        showinfo('adding website', 'website already exists')
+                        showinfo("adding website", "website already exists")
                 else:
-                    showinfo('adding website', 'a name is requiered')
+                    showinfo("adding website", "a name is requiered")
             
 
             def save_add(self):
@@ -1006,22 +1043,20 @@ def _add_website_button_on_click(self):
                 save(self)
                 cancel(self)
 
-            new_window_button_save_and_exit = _Button(new_window, 'save and exit', 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
-            new_window_button_save_and_add = _Button(new_window, 'save and add', 1, 1, 2, 15, [10, 5, 10, 5], save_add)
-            new_window_button_canel = _Button(new_window, 'cancel', 2, 1, 2, 15, [10, 5, 10, 5], cancel)
+            new_window_button_save_and_exit = _Button(new_window, "save and exit", 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
+            new_window_button_save_and_add = _Button(new_window, "save and add", 1, 1, 2, 15, [10, 5, 10, 5], save_add)
+            new_window_button_canel = _Button(new_window, "cancel", 2, 1, 2, 15, [10, 5, 10, 5], cancel)
             new_window_label.create()
             new_window_entry.create()
             new_window_button_save_and_exit.create()
             new_window_button_save_and_add.create()
             new_window_button_canel.create()
         else:
-            showinfo('add website', 'no schedule selected')
+            showinfo("add website", "no schedule selected")
     thread = threading.Thread(target=_)
     thread.start()
-        
 
-
-add_website_button = _Button(schedule_settings, 'add a website', 4, 3, 1, 1, [10, 5, 10, 5], _add_website_button_on_click)
+add_website_button = _Button(schedule_settings, "add", 4, 3, 1, 1, [10, 5, 10, 5], _add_website_button_on_click)
 add_website_button.create()
 
 def _delete_website_button_on_click(self):
@@ -1032,16 +1067,16 @@ def _delete_website_button_on_click(self):
             schedule.load()
             websites = schedule.websites
             _website_frame.update_value(websites)
-            showinfo('delete website', 'website deleted')
+            showinfo("delete website", "website deleted")
         else:
-            showinfo('delete website', 'no website selected')
+            showinfo("delete website", "no website selected")
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_website_button = _Button(schedule_settings, 'delete a website', 5, 3, 1, 1, [10, 5, 10, 5], _delete_website_button_on_click)
+delete_website_button = _Button(schedule_settings, "delete", 5, 3, 1, 1, [10, 5, 10, 5], _delete_website_button_on_click)
 delete_website_button.create()
 
-_schedule_frame = _ListBox(schedule_settings, schedules, SINGLE, 22, 40, 0, 1, [5, 10, 10, 10], 3 , 4, _on_schedule_select)
+_schedule_frame = _ListBox(schedule_settings, schedules, SINGLE, 20, 30, 0, 1, [5, 10, 10, 10], 3 , 4, _on_schedule_select)
 _schedule_frame.create()
 
 
@@ -1051,8 +1086,8 @@ _schedule_frame.create()
 def _add_schedule_button_on_click(self):
     def _():
         new_window = Toplevel()
-        new_window.title('adding a schedule')
-        new_window_label = _Label(new_window, 'schedule name: ',0, 0, [10, 0, 0, 0], 1)
+        new_window.title("adding")
+        new_window_label = _Label(new_window, "schedule name: ",0, 0, [10, 0, 0, 0], 1)
         new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2)
         new_window_time_picker_frame = Frame(new_window)
         new_window_time_picker_frame.grid(column=0, row=1, columnspan=3)
@@ -1063,7 +1098,7 @@ def _add_schedule_button_on_click(self):
             new_window.destroy()
 
         def save(self):
-            if new_window_entry.get_value() != '':
+            if new_window_entry.get_value() != "":
                 durations = []
                 for time_picker in new_window_time_pickers:
                     _start_time, _end_time = time_picker.get_value()
@@ -1075,12 +1110,12 @@ def _add_schedule_button_on_click(self):
 
                 output = Schedule.create(new_window_entry.get_value(), durations)
                 if output==ALREADY_EXSISTS:
-                    showinfo('adding schedule', 'schedule already exists')
+                    showinfo("adding schedule", "schedule already exists")
                 else:
                     schedules = Schedule.get_all()
                     _schedule_frame.update_value(schedules)
             else:
-                    showinfo('adding schedule', 'a name is requiered')
+                    showinfo("adding schedule", "a name is requiered")
         
         def save_add(self):
                 save(self)
@@ -1090,9 +1125,9 @@ def _add_schedule_button_on_click(self):
             save(self)
             cancel(self)
 
-        new_window_button_save_and_exit = _Button(new_window, 'save and exit', 0, 3, 2, 15, [10, 5, 10, 5], save_and_exit)
-        new_window_button_save_and_add = _Button(new_window, 'save and add', 1, 3, 2, 15, [10, 5, 10, 5], save_add)
-        new_window_button_canel = _Button(new_window, 'cancel', 2, 3, 2, 15, [10, 5, 10, 5], cancel)
+        new_window_button_save_and_exit = _Button(new_window, "save and exit", 0, 3, 2, 15, [10, 5, 10, 5], save_and_exit)
+        new_window_button_save_and_add = _Button(new_window, "save and add", 1, 3, 2, 15, [10, 5, 10, 5], save_add)
+        new_window_button_canel = _Button(new_window, "cancel", 2, 3, 2, 15, [10, 5, 10, 5], cancel)
         new_window_button_save_and_exit.create()
         new_window_button_save_and_add.create()
         new_window_button_canel.create()
@@ -1105,14 +1140,14 @@ def _add_schedule_button_on_click(self):
             new_window_time_pickers.append(time_picker)
             
         
-        new_window_button_add_time_picker = _Button(new_window, '+', 1, 2, 2, 15, [10, 5, 10, 5], add_new_time_picker)
+        new_window_button_add_time_picker = _Button(new_window, "+", 1, 2, 2, 15, [10, 5, 10, 5], add_new_time_picker)
         new_window_button_add_time_picker.create()
         new_window_label.create()
         new_window_entry.create()
     thread = threading.Thread(target=_)
     thread.start()
 
-add_category_button = _Button(schedule_settings, 'add', 0, 6, 1, 1, [5, 5, 5, 5], _add_schedule_button_on_click)
+add_category_button = _Button(schedule_settings, "add", 0, 6, 1, 1, [5, 5, 5, 5], _add_schedule_button_on_click)
 add_category_button.create()
  
 def _delete_schedule_button_on_click(self):
@@ -1126,13 +1161,13 @@ def _delete_schedule_button_on_click(self):
             _categorie_frame.update_value([])
             durations_frame.update_value([])
 
-            showinfo('delete schedule', 'schedule deleted')
+            showinfo("delete schedule", "schedule deleted")
         else:
-            showinfo('delete schedule', 'no schedule selected')
+            showinfo("delete schedule", "no schedule selected")
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_category_button = _Button(schedule_settings, 'delete', 1, 6, 1, 1, [5, 5, 5, 5], _delete_schedule_button_on_click)
+delete_category_button = _Button(schedule_settings, "delete", 1, 6, 1, 1, [5, 5, 5, 5], _delete_schedule_button_on_click)
 delete_category_button.create()
  
 def edit_category_button_on_click(self): 
@@ -1141,8 +1176,8 @@ def edit_category_button_on_click(self):
             schedule = Schedule(_schedule_frame.value)
             schedule.load()
             new_window = Toplevel()
-            new_window.title('adding a schedule')
-            new_window_label = _Label(new_window, 'schedule name: ',0, 0, [10, 0, 0, 0], 1)
+            new_window.title("adding")
+            new_window_label = _Label(new_window, "schedule name: ",0, 0, [10, 0, 0, 0], 1)
             new_window_entry = _Entry(new_window, 1, 0, [10, 0, 0, 10], 1, 2, schedule.name)
             new_window_time_picker_frame = Frame(new_window)
             new_window_time_picker_frame.grid(column=0, row=1, columnspan=3)
@@ -1153,7 +1188,7 @@ def edit_category_button_on_click(self):
                 new_window.destroy()
 
             def save(self):
-                if new_window_entry.get_value() != '':
+                if new_window_entry.get_value() != "":
                     durations = []
                     for time_picker in new_window_time_pickers:
                         _start_time, _end_time = time_picker.get_value()
@@ -1167,7 +1202,7 @@ def edit_category_button_on_click(self):
                     schedules = Schedule.get_all()
                     _schedule_frame.update_value(schedules)
                 else:
-                        showinfo('adding schedule', 'a name is requiered')
+                        showinfo("adding schedule", "a name is requiered")
             
             def save_add(self):
                     save(self)
@@ -1177,9 +1212,9 @@ def edit_category_button_on_click(self):
                 save(self)
                 cancel(self)
 
-            new_window_button_save_and_exit = _Button(new_window, 'save and exit', 0, 3, 2, 15, [10, 5, 10, 5], save_and_exit)
-            new_window_button_save_and_add = _Button(new_window, 'save and add', 1, 3, 2, 15, [10, 5, 10, 5], save_add)
-            new_window_button_canel = _Button(new_window, 'cancel', 2, 3, 2, 15, [10, 5, 10, 5], cancel)
+            new_window_button_save_and_exit = _Button(new_window, "save and exit", 0, 3, 2, 15, [10, 5, 10, 5], save_and_exit)
+            new_window_button_save_and_add = _Button(new_window, "save and add", 1, 3, 2, 15, [10, 5, 10, 5], save_add)
+            new_window_button_canel = _Button(new_window, "cancel", 2, 3, 2, 15, [10, 5, 10, 5], cancel)
             new_window_button_save_and_exit.create()
             new_window_button_save_and_add.create()
             new_window_button_canel.create()
@@ -1192,14 +1227,14 @@ def edit_category_button_on_click(self):
                 new_window_time_pickers.append(time_picker)
                 
             
-            new_window_button_add_time_picker = _Button(new_window, '+', 1, 2, 2, 15, [10, 5, 10, 5], add_new_time_picker)
+            new_window_button_add_time_picker = _Button(new_window, "+", 1, 2, 2, 15, [10, 5, 10, 5], add_new_time_picker)
             new_window_button_add_time_picker.create()
             new_window_label.create()
             new_window_entry.create()
     thread = threading.Thread(target=_)
     thread.start()
 
-rename_category_button = _Button(schedule_settings, 'edit', 2, 6, 1, 1, [5, 5, 5, 5], edit_category_button_on_click)
+rename_category_button = _Button(schedule_settings, "edit", 2, 6, 1, 1, [5, 5, 5, 5], edit_category_button_on_click)
 rename_category_button.create()
 
 def _add_category_button_on_click(self):
@@ -1208,7 +1243,7 @@ def _add_category_button_on_click(self):
             new_window = Toplevel()
             categories = get_unique_elements(Category.get_all(), _categorie_frame.values)
             category__frame = _ListBox(new_window, categories, MULTIPLE, 18, 25, 1, 0, [10, 10, 5, 10], 1, 1)
-            _categorie_frame_label  = _Label(new_window, 'choose categories: ',0 , 0, [ 10, 10, 10, 0], 1)  
+            _categorie_frame_label  = _Label(new_window, "choose categories: ",0 , 0, [ 10, 10, 10, 0], 1)  
             def cancel(self):
                     new_window.destroy()
 
@@ -1223,14 +1258,14 @@ def _add_category_button_on_click(self):
                     categories = schedule.categories
                     _categorie_frame.update_value(categories)
                 else:
-                    showinfo('add schedule', 'no schedule selected')
+                    showinfo("add schedule", "no schedule selected")
             
             def save_and_exit(self):
                 save(self)
                 cancel(self)
 
-            new_window_button_save_and_exit = _Button(new_window, 'save', 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
-            new_window_button_canel = _Button(new_window, 'cancel', 1, 1, 2, 15, [10, 5, 10, 5], cancel)
+            new_window_button_save_and_exit = _Button(new_window, "save", 0, 1, 2, 15, [10, 5, 10, 5], save_and_exit)
+            new_window_button_canel = _Button(new_window, "cancel", 1, 1, 2, 15, [10, 5, 10, 5], cancel)
             new_window_button_save_and_exit.create()
             new_window_button_canel.create()
             category__frame.create()
@@ -1240,7 +1275,7 @@ def _add_category_button_on_click(self):
 
 
 
-add_schedule_button = _Button(schedule_settings, 'add a schedule', 4, 9, 1, 2, [10, 5, 10, 5], _add_category_button_on_click)
+add_schedule_button = _Button(schedule_settings, "add", 4, 9, 1, 2, [10, 5, 10, 5], _add_category_button_on_click)
 add_schedule_button.create()
 
 def _delete_category_button_on_click(self):
@@ -1251,13 +1286,13 @@ def _delete_category_button_on_click(self):
             schedule.load()
             schedules = schedule.categories
             _categorie_frame.update_value(schedules)
-            showinfo('delete category', 'category deleted')
+            showinfo("delete category", "category deleted")
         else:
-            showinfo('delete category', 'no category selected')
+            showinfo("delete category", "no category selected")
     thread = threading.Thread(target=_)
     thread.start()
 
-delete_schedule_button = _Button(schedule_settings, 'delete a category', 5, 9, 1, 2, [ 10, 5, 10, 5], _delete_category_button_on_click)
+delete_schedule_button = _Button(schedule_settings, "delete", 5, 9, 1, 2, [ 10, 5, 10, 5], _delete_category_button_on_click)
 delete_schedule_button.create()
 
 
@@ -1267,13 +1302,13 @@ delete_schedule_button.create()
 
 
 
-current_active_categories = _ListBox(active, [], SINGLE, 7, 40, 1, 0, [10, 10, 10, 10], 1, 1)
-current_active_schedules = _ListBox(active, [], SINGLE, 7, 40, 4, 0, [10, 10, 10, 10], 1, 1)
-current_active_websites = _ListBox(active, [], SINGLE, 7, 40, 7, 0, [10, 30, 10, 10], 1, 1)
+current_active_categories = _ListBox(active, [], SINGLE, 5, 30, 0, 1, [10, 10, 10, 10], 1, 1)
+current_active_schedules = _ListBox(active, [], SINGLE, 5, 30, 0, 3, [10, 10, 10, 10], 1, 1)
+current_active_websites = _ListBox(active, [], SINGLE, 5, 30, 0, 5, [10, 10, 10, 10], 1, 1)
 
-current_active_categories_label = _Label(active, 'active ategories: ', 0, 0, [10, 10, 10, 30], 1)
-current_active_schedules_label = _Label(active, 'active schedules: ', 3, 0, [10, 10, 10, 10], 1)
-current_active_websites_label = _Label(active, 'active websites: ', 6, 0, [10, 10, 10, 10], 1)
+current_active_categories_label = _Label(active, "active ategories: ", 0, 0, [10, 10, 10, 30], 2)
+current_active_schedules_label = _Label(active, "active schedules: ", 0, 2, [10, 10, 10, 10], 2)
+current_active_websites_label = _Label(active, "active websites: ", 0, 4, [10, 10, 10, 10], 2)
 
 current_active_categories_label.create()
 current_active_schedules_label.create()
@@ -1285,7 +1320,7 @@ current_active_websites.create()
 
 
 def block(self):
-    if self.text == 'block':
+    if self.text == "block":
         Core._start()
         def on_change(categories, websites, schedules):
             def _():
@@ -1297,21 +1332,21 @@ def block(self):
             
         thread = threading.Thread(target=lambda: Core._listen(1, on_change))
         thread.start()
-        self.update_text('stop')
+        self.update_text("stop")
         
-    elif self.text == 'stop':
+    elif self.text == "stop":
         Core._end()
-        self.update_text('block')
+        self.update_text("block")
 
 
 
 def exit(self):
     disable_event()
 
-delete_schedule_button = _Button(root, 'block', 0, 2, 2, 1, [ 10, 5, 10, 5], block)
+delete_schedule_button = _Button(active, "block", 0, 7, 2, 1, [ 10, 5, 10, 5], block, xspan=2)
 delete_schedule_button.create()
 
-delete_schedule_button = _Button(root, 'exit', 9, 2, 2, 1, [ 10, 5, 10, 5], exit)
+delete_schedule_button = _Button(active, "exit", 0, 8, 2, 1, [ 10, 5, 5, 5], exit, xspan=2)
 delete_schedule_button.create()
 
 root.mainloop()

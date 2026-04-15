@@ -1,4 +1,6 @@
 from utils import *
+from tkinter import *
+from constant import *
 
 
 class _ListBox:
@@ -79,7 +81,7 @@ class _Label:
         self.label.configure(text=value)
 
 class _Button:
-    def __init__(self, root, text, position_x, position_y, height, width, pad, onClick):
+    def __init__(self, root, text, position_x, position_y, height, width, pad, onClick, xspan=1):
         self.root = root
         self.text = text
         self.position_x = position_x
@@ -87,12 +89,13 @@ class _Button:
         self.height = height
         self.width = width
         self.pad = pad
+        self.xspan = xspan
         self.bind_component = []
         self.onClick = onClick
 
     def create(self):
         self.button = Button(self.root, text=self.text, command=lambda: self.onClick(self), height=self.height, width=self.width)
-        self.button.grid(column=self.position_x, row=self.position_y, sticky='nwes', pady=(self.pad[0], self.pad[2]), padx=(self.pad[1], self.pad[3]))
+        self.button.grid(column=self.position_x, row=self.position_y, sticky='nwes', pady=(self.pad[0], self.pad[2]), padx=(self.pad[1], self.pad[3]), columnspan=self.xspan)
     
     def destroy(self):
         self.button.destroy()
@@ -100,8 +103,6 @@ class _Button:
     def update_text(self, text):
         self.text = text
         self.button.configure(text=text)
-
-    
 
 
 class _Entry:
@@ -195,4 +196,4 @@ class TimePicker:
             second_ = self.second_.get()
 
             return '{}:{}:{}'.format(_hour, _minute, _second), '{}:{}:{}'.format(hour_, minute_, second_)
-        return None, None 
+        return None, None

@@ -1,33 +1,21 @@
-from random import randint
-from datetime import datetime
-from tkinter import *
-import threading
-from utils import *
-from time import sleep
-import json
-import os
-import shutil
 from constant import *
-from tkinter.messagebox import showinfo
-from schedule import Schedule
-from category import Category
-from website import Website
-from core import Core
+import re
 
 def get_original_data():
-    return open(ORIGINAL_HOST_FILE_PATH, 'r').read()
+    return open(ORIGINAL_HOST_FILE_PATH, "r").read()
 
 def join_path(*kw):
-    return '\\'.join([str(i) for i in kw])
+    return "\\".join([str(i) for i in kw])
 
 def pad(variable, length, to_last = False):
     variable = str(variable)
     if length > len(variable):
         return variable
-    return (length-len(variable)) * int(to_last) * '0' + variable + (length-len(variable)) * int(not to_last) * '0'
+    return (length-len(variable)) * int(to_last) * "0" + variable + (length-len(variable)) * int(not to_last) * "0"
 
 def write_init_file(name, length):
-    open(join_path(CATEGORY_DIR_PATH, name, INIT_FILE), 'w').write(length)
+    with open(join_path(CATEGORY_DIR_PATH, name, INIT_FILE), "w") as file:
+        file.write(length)
     return SUCCESS
  
 def get_init_file(name):
@@ -35,3 +23,14 @@ def get_init_file(name):
 
 def get_unique_elements(array, _array):
     return [i for i in array if i not in _array]
+
+
+def join_if_not_ip_address(array, value):
+    pattern = re.compile(IP_ADDRESS_REGULAR_EXPRESSION)
+    joint_array = "\n" + LOCALHOST_2 + ' '
+    joint_array += 'www.' if pattern.match(array[0]) else ''
+    for element in array:
+        if not pattern.match(element):
+            joint_array += 'www.'
+        joint_array += element + value
+    return joint_array
